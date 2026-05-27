@@ -682,7 +682,7 @@ function StudentProgress() {
           <BarChart data={WEEKLY_VOL} barSize={32} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
             <XAxis dataKey="d" tick={{ fill: C.muted, fontSize: 11, fontFamily: Fh }} axisLine={false} tickLine={false} />
             <YAxis hide />
-            <Tooltip contentStyle={{ background: C.s3, border: `1px solid ${C.border}`, borderRadius: 6, color: C.w }} formatter={(v) => v > 0 ? [`${(Number(v) / 1000).toFixed(1)} t`, "Volumen"] : ["Descanso"]} />
+            <Tooltip contentStyle={{ background: C.s3, border: `1px solid ${C.border}`, borderRadius: 6, color: C.w }} formatter={(v) => (v ?? 0) > 0 ? [`${(Number(v) / 1000).toFixed(1)} t`, "Volumen"] : ["Descanso"]} />
             <Bar dataKey="v" radius={[4, 4, 0, 0]}>
               {WEEKLY_VOL.map((e, i) => <Cell key={i} fill={e.v > 0 ? C.blue : C.s4} />)}
             </Bar>
