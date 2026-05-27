@@ -721,6 +721,14 @@ export default function Home() {
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ email: string; name: string }>({ email: "", name: "Cargando..." });
   const [dayData, setDayData]         = useState<StudentDayData | null>(null);
+  const [isMobile, setIsMobile]       = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   useEffect(() => {
     const link = document.createElement("link");
@@ -806,10 +814,82 @@ export default function Home() {
   const totalDone = allSets.filter(s => s.done).length;
   const totalSets = allSets.length;
 
-  const coachNav   = [{ id: "dashboard", label: "DASHBOARD" }, { id: "programs", label: "PROGRAMAS" }, { id: "students", label: "ALUMNOS" }];
-  const studentNav = [{ id: "dashboard", label: "HOY" }, { id: "session", label: "SESIÓN" }, { id: "progress", label: "PROGRESO" }];
+  const coachNav   = [{ id: "dashboard", label: "DASHBOARD", icon: "📊" }, { id: "programs", label: "PROGRAMAS", icon: "📋" }, { id: "students", label: "ALUMNOS", icon: "👥" }];
+  const studentNav = [{ id: "dashboard", label: "HOY", icon: "🏠" }, { id: "session", label: "SESIÓN", icon: "💪" }, { id: "progress", label: "PROGRESO", icon: "📈" }];
   const navItems   = role === "coach" ? coachNav : studentNav;
 
+  const mainContent = (
+    <>
+      {role === "coach" && view === "dashboard" && <CoachDashboard navigate={setView} students={students} />}
+      {role === "coach" && view === "programs"  && <ProgramsView />}
+      {role === "coach" && view === "students"  && <StudentsView students={students} loading={loadingStudents} gymId={gymId} onRefresh={loadStudents} />}
+      {role === "student" && view === "dashboard" && <StudentHome startSession={startSession} dayData={dayData} />}
+      {role === "student" && view === "progress"  && <StudentProgress />}
+      {role === "student" && view === "session"   && (
+        totalSets === 0
+          ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "50vh", gap: 16 }}>
+              <div style={{ fontFamily: Fh, fontSize: 12, color: C.muted, letterSpacing: 2 }}>NO HAY SESIÓN ACTIVA</div>
+              <Btn onClick={startSession}>▶  INICIAR SESIÓN</Btn>
+            </div>
+          : <ActiveSession sessionSets={sessionSets} toggleSetDone={toggleSetDone} updateSet={updateSet} finishSession={finishSession} totalDone={totalDone} totalSets={totalSets} done={sessionDone} />
+      )}
+    </>
+  );
+
+  const userInitials = currentUser.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "??";
+
+  // ── MOBILE LAYOUT ─────────────────────────────────────────────
+  if (isMobile) {
+    return (
+      <div style={{ minHeight: "100vh", background: C.bg, color: C.w, fontFamily: Fb, fontSize: 14 }}>
+        {/* Header */}
+        <header style={{ position: "sticky", top: 0, zIndex: 100, background: C.s1, borderBottom: `1px solid ${C.border}`, padding: "0 16px", height: 52, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+            <span style={{ fontFamily: Fh, fontWeight: 900, fontSize: 11, color: C.dim, letterSpacing: 1 }}>//</span>
+            <span style={{ fontFamily: Fh, fontWeight: 900, fontSize: 18, letterSpacing: 4, color: C.w }}>ACTIVE</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Toggle rol solo para coaches */}
+            {userRole === "coach" && (
+              <div style={{ display: "flex", background: C.s3, borderRadius: 5, padding: 2, gap: 2 }}>
+                {(["coach", "student"] as const).map(r => (
+                  <button key={r} onClick={() => switchRole(r)} style={{ padding: "4px 10px", borderRadius: 4, fontSize: 8, fontFamily: Fh, fontWeight: 700, letterSpacing: 1, border: "none", background: role === r ? C.w : "transparent", color: role === r ? C.bg : C.muted, cursor: "pointer" }}>
+                    {r === "coach" ? "PROFE" : "ALUMNO"}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button onClick={async () => { const supabase = createClient(); await supabase.auth.signOut(); window.location.href = "/login"; }}
+              style={{ background: "transparent", border: `1px solid ${C.border}`, borderRadius: 5, padding: "4px 10px", color: C.muted, fontFamily: Fh, fontWeight: 700, fontSize: 8, letterSpacing: 1.5, cursor: "pointer" }}>
+              SALIR
+            </button>
+          </div>
+        </header>
+
+        {/* Content */}
+        <div style={{ padding: "16px 16px 80px" }}>
+          {mainContent}
+        </div>
+
+        {/* Bottom nav */}
+        <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: C.s1, borderTop: `1px solid ${C.border}`, display: "flex", height: 60, zIndex: 100 }}>
+          {navItems.map(item => (
+            <button key={item.id} onClick={() => setView(item.id)} style={{
+              flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              gap: 3, border: "none", background: "transparent", cursor: "pointer",
+              borderTop: view === item.id ? `2px solid ${C.w}` : "2px solid transparent",
+              color: view === item.id ? C.w : C.muted,
+            }}>
+              <span style={{ fontSize: 16 }}>{item.icon}</span>
+              <span style={{ fontSize: 8, fontFamily: Fh, fontWeight: 700, letterSpacing: 1.5 }}>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
+    );
+  }
+
+  // ── DESKTOP LAYOUT ────────────────────────────────────────────
   return (
     <div style={{ display: "flex", height: "100vh", background: C.bg, color: C.w, fontFamily: Fb, fontSize: 14, overflow: "hidden" }}>
       <aside style={{ width: 220, background: C.s1, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
@@ -820,28 +900,28 @@ export default function Home() {
           </div>
           <div style={{ fontSize: 9, color: C.muted, letterSpacing: 3, marginTop: 3 }}>GYM SYSTEM</div>
         </div>
-        {/* Toggle solo visible para coaches */}
         {userRole === "coach" && (
-        <div style={{ padding: "12px 14px", borderBottom: `1px solid ${C.border}` }}>
-          <div style={{ display: "flex", background: C.s3, borderRadius: 6, padding: 3, gap: 3 }}>
-            {(["coach", "student"] as const).map((r) => (
-              <button key={r} onClick={() => switchRole(r)} style={{ flex: 1, padding: "6px 0", borderRadius: 4, fontSize: 10, fontFamily: Fh, fontWeight: 700, letterSpacing: 1.5, border: "none", background: role === r ? C.w : "transparent", color: role === r ? C.bg : C.muted, transition: "all 0.15s" }}>
-                {r === "coach" ? "PROFE" : "ALUMNO"}
-              </button>
-            ))}
+          <div style={{ padding: "12px 14px", borderBottom: `1px solid ${C.border}` }}>
+            <div style={{ display: "flex", background: C.s3, borderRadius: 6, padding: 3, gap: 3 }}>
+              {(["coach", "student"] as const).map(r => (
+                <button key={r} onClick={() => switchRole(r)} style={{ flex: 1, padding: "6px 0", borderRadius: 4, fontSize: 10, fontFamily: Fh, fontWeight: 700, letterSpacing: 1.5, border: "none", background: role === r ? C.w : "transparent", color: role === r ? C.bg : C.muted, transition: "all 0.15s" }}>
+                  {r === "coach" ? "PROFE" : "ALUMNO"}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
         )}
         <nav style={{ flex: 1, padding: "8px 10px" }}>
           {navItems.map(item => (
-            <button key={item.id} onClick={() => setView(item.id)} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 14px", borderRadius: 6, marginBottom: 2, border: "none", background: view === item.id ? C.s3 : "transparent", color: view === item.id ? C.w : C.muted, fontSize: 10, fontFamily: Fh, fontWeight: 700, letterSpacing: 2.5, borderLeft: view === item.id ? `2px solid ${C.w}` : "2px solid transparent", transition: "all 0.15s" }}>
+            <button key={item.id} onClick={() => setView(item.id)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", borderRadius: 6, marginBottom: 2, border: "none", background: view === item.id ? C.s3 : "transparent", color: view === item.id ? C.w : C.muted, fontSize: 10, fontFamily: Fh, fontWeight: 700, letterSpacing: 2.5, borderLeft: view === item.id ? `2px solid ${C.w}` : "2px solid transparent", transition: "all 0.15s" }}>
+              <span style={{ fontSize: 14 }}>{item.icon}</span>
               {item.label}
             </button>
           ))}
         </nav>
         <div style={{ padding: "14px", borderTop: `1px solid ${C.border}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-            <Avatar initials={currentUser.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "??"} />
+            <Avatar initials={userInitials} />
             <div>
               <div style={{ fontSize: 12, fontWeight: 600 }}>{currentUser.name}</div>
               <div style={{ fontSize: 10, color: C.muted }}>{role === "coach" ? "Entrenador" : "Alumno"}</div>
@@ -856,22 +936,10 @@ export default function Home() {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <header style={{ height: 52, padding: "0 32px", borderBottom: `1px solid ${C.border}`, background: C.s1, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div style={{ fontFamily: Fh, fontWeight: 700, fontSize: 13, letterSpacing: 3, color: C.muted }}>{navItems.find(n => n.id === view)?.label || ""}</div>
-          <div style={{ fontSize: 10, color: C.muted, letterSpacing: 1.5, fontFamily: Fh }}>LUN 26 · MAYO 2026</div>
+          <div style={{ fontSize: 10, color: C.muted, letterSpacing: 1.5, fontFamily: Fh }}>/// ACTIVE GYM</div>
         </header>
         <div style={{ flex: 1, overflow: "auto", padding: "28px 32px" }}>
-          {role === "coach" && view === "dashboard" && <CoachDashboard navigate={setView} students={students} />}
-          {role === "coach" && view === "programs"  && <ProgramsView />}
-          {role === "coach" && view === "students"  && <StudentsView students={students} loading={loadingStudents} gymId={gymId} onRefresh={loadStudents} />}
-          {role === "student" && view === "dashboard" && <StudentHome startSession={startSession} dayData={dayData} />}
-          {role === "student" && view === "progress"  && <StudentProgress />}
-          {role === "student" && view === "session"   && (
-            totalSets === 0
-              ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "50vh", gap: 16 }}>
-                  <div style={{ fontFamily: Fh, fontSize: 12, color: C.muted, letterSpacing: 2 }}>NO HAY SESIÓN ACTIVA</div>
-                  <Btn onClick={startSession}>▶  INICIAR SESIÓN</Btn>
-                </div>
-              : <ActiveSession sessionSets={sessionSets} toggleSetDone={toggleSetDone} updateSet={updateSet} finishSession={finishSession} totalDone={totalDone} totalSets={totalSets} done={sessionDone} />
-          )}
+          {mainContent}
         </div>
       </div>
     </div>
