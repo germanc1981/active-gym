@@ -201,7 +201,7 @@ export async function getStudentCurrentDay(studentId: string) {
       muscles: day.muscle_groups || [],
       exercises: (exercises || []).map(e => ({
         id: e.id,
-        name: (e.exercises as { name: string } | null)?.name || "Ejercicio",
+        name: (e.exercises as unknown as { name: string } | null)?.name || "Ejercicio",
         sets: e.sets,
         reps: e.reps,
         kg: Number(e.target_weight) || 0,
