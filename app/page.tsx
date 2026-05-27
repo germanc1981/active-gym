@@ -670,7 +670,7 @@ function StudentProgress() {
           <LineChart data={BENCH_PROGRESS} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
             <XAxis dataKey="w" tick={{ fill: C.muted, fontSize: 10, fontFamily: Fh }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fill: C.muted, fontSize: 10 }} axisLine={false} tickLine={false} domain={[65, 90]} />
-            <Tooltip contentStyle={{ background: C.s3, border: `1px solid ${C.border}`, borderRadius: 6, color: C.w }} formatter={(v) => [`${v} kg`, "Peso"]} />
+            <Tooltip contentStyle={{ background: C.s3, border: `1px solid ${C.border}`, borderRadius: 6, color: C.w }} formatter={(v) => [`${Number(v)} kg`, "Peso"]} />
             <Line type="monotone" dataKey="kg" stroke={C.green} strokeWidth={2.5} dot={{ fill: C.green, r: 4, strokeWidth: 0 }} activeDot={{ r: 6, fill: C.green, strokeWidth: 0 }} />
           </LineChart>
         </ResponsiveContainer>
@@ -682,7 +682,7 @@ function StudentProgress() {
           <BarChart data={WEEKLY_VOL} barSize={32} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
             <XAxis dataKey="d" tick={{ fill: C.muted, fontSize: 11, fontFamily: Fh }} axisLine={false} tickLine={false} />
             <YAxis hide />
-            <Tooltip contentStyle={{ background: C.s3, border: `1px solid ${C.border}`, borderRadius: 6, color: C.w }} formatter={(v) => (v ?? 0) > 0 ? [`${(Number(v) / 1000).toFixed(1)} t`, "Volumen"] : ["Descanso"]} />
+            <Tooltip contentStyle={{ background: C.s3, border: `1px solid ${C.border}`, borderRadius: 6, color: C.w }} formatter={(v) => Number(v ?? 0) > 0 ? [`${(Number(v) / 1000).toFixed(1)} t`, "Volumen"] : ["Descanso"]} />
             <Bar dataKey="v" radius={[4, 4, 0, 0]}>
               {WEEKLY_VOL.map((e, i) => <Cell key={i} fill={e.v > 0 ? C.blue : C.s4} />)}
             </Bar>
