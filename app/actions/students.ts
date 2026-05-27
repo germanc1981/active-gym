@@ -130,7 +130,7 @@ export async function getStudentCurrentDay(studentId: string) {
 
   if (spError || !sp) return { success: false, error: "Sin programa asignado", data: null };
 
-  const program = sp.programs as { id: string; name: string } | null;
+  const program = sp.programs as unknown as { id: string; name: string } | null;
   if (!program) return { success: false, error: "Programa no encontrado", data: null };
 
   // 2. Buscar la semana actual
